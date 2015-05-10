@@ -5,8 +5,6 @@ class Road(object):
     def __init__(self, lanes):
         self.lanes = lanes
         self.roadend = max([_.laneend for _ in self.lanes])
-        print([_.laneend for _ in self.lanes])
-        print(self.roadend)
     
     def get_remaining_road(self, lane, location):
         pass
@@ -15,11 +13,13 @@ class Road(object):
         return self.lanes[lane].get_speed(location)
         
     def to_string(self):
+        string = ""
         for i in range(self.roadend):
-            toprint = str(i) + "\t"
+            sec = str(i) + "\t"
             for j in range(len(self.lanes)):
-                toprint += str(self.get_speed(j, i)) + "\t"
-            print(toprint)
+                sec += str(self.get_speed(j, i)) + "\t"
+            string += sec + "\n"
+        return string
 
 class Lane(object):
     """

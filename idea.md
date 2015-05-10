@@ -15,6 +15,11 @@
 - preferred distance ahead of vehicles
 - aggressiveness = how likely to change lanes
 
+###Simplification
+
+- All vehicles are cars (length 2)
+- All 
+
 ##Modelling Roads
 - Number lanes
 - Each lane has a starting point and end point

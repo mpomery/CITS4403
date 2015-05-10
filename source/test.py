@@ -35,5 +35,13 @@ try:
 except:
     print("lane5 failed as expected")
 
-road1 = Road.Road([lane1, lane2])
-road1.to_string()
+sections6 = [(0,30)]
+speeds6 = [2]
+lane6 = Road.Lane(sections6, speeds6)
+
+sections7 = [(0,20)]
+speeds7 = [2]
+lane7 = Road.Lane(sections7, speeds7)
+
+road1 = Road.Road([lane6, lane7])
+print(road1.to_string())
