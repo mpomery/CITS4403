@@ -1,3 +1,3 @@
-Wikipedia: Queing Theory
-http://en.wikipedia.org/wiki/Queueing_theory
+Wikipedia: Renting
+http://en.wikipedia.org/wiki/Renting
 
