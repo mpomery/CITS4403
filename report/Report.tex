@@ -1,7 +1,7 @@
 \documentclass[a4paper,12pt,openany]{report}
 
 \usepackage{titling}
-\usepackage[margin=0.75in,headsep=0.5in,footskip=0.5in]{geometry}
+\usepackage[margin=3cm,headsep=2cm,footskip=2cm]{geometry}
 \usepackage{graphicx}
 \usepackage{float}
 
@@ -29,6 +29,8 @@
 	}
 }
 
+
+
 \newcommand{\coverphoto}[2]{
 	\postdate{
 		\par\end{center}
@@ -38,6 +40,16 @@
 		\end{center}
 	}
 }
+
+\newcounter{excercisenumber}
+\setcounter{excercisenumber}{1}
+\newenvironment{excercise}[0]{
+	\textbf{Exercise \theexcercisenumber: }\itshape
+}{
+	\stepcounter{excercisenumber}
+}
+
+
 
 % document
 
@@ -53,6 +65,7 @@
 \clearpage
 
 \input{sections/introduction}
+\input{sections/implementation}
 
 \clearpage
 
