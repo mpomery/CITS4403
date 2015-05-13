@@ -1,4 +1,5 @@
 import wx
+import random
 
 """
 Our entire world
@@ -31,6 +32,15 @@ class City(object):
         if (x >= 0 and x < self.size) and (y >= 0 and y < self.size):
             self.houses[y * self.size + x][1] = person
     
+    def get_empty_houses(self):
+        empty = []
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.get_house_occupant(x, y) == None:
+                    empty.append((x, y))
+        return empty
+        
+    
     @property
     def number_of_houses(self):
         return self.__number_of_houses
@@ -39,15 +49,20 @@ class City(object):
 Manages everyone living in our city
 """
 class Population(object):
-    def __init__(self, size, city):
+    def __init__(self, city, size=300):
         self.__size = size
         self.__current_step = 0
         self.city = city
         self.people = [Person() for _ in range(self.__size)]
         
         #Occupy the houses randomly
+        homes = []
+        for x in range(self.city.size):
+            for y in range(self.city.size):
+                homes.insert(random.randint(0, len(homes)), (x,y))
         for person in self.people:
-            self.city.size
+            home = homes.pop(0)
+            self.move_person(person, home[0], home[1])
     
     @property
     def size(self):
@@ -55,7 +70,23 @@ class Population(object):
     
     def step(self):
         self.__current_step += 1
+        empty_houses = self.city.get_empty_houses()
+        people_to_move = self.get_people_to_move()
+        print("End of Month " + str(self.__current_step))
+        print("People Who Can Move: " + str(len(people_to_move)))
         
+        
+    
+    def get_people_to_move(self):
+        can_move = []
+        for person in self.people:
+            if person.can_move(self.__current_step):
+                can_move.append(person)
+        return can_move
+    
+    def move_person(self, person, x, y):
+        self.city.set_house_occupant(x, y, person)
+        person.move(0, x, y, self.city.get_house_price(x, y))
 
 """
 A person living in our city
@@ -73,10 +104,11 @@ class Person(object):
             return True
         return False
     
-    def move(self, step, x, y):
-        if (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24:
-            return True
-        return False
+    def move(self, step, x, y, price):
+        self.rent_history.append(price)
+        self.last_moved = step
+        self.current_x = x
+        self.current_y = y
     
 
 """
@@ -106,10 +138,10 @@ if __name__=='__main__':
     #TODO: Get these from command line arguments
     citysize = 20
     price = 250
-    citypopulation = 300
+    citypopulation = 200
     
     city = City(citysize, price)
-    population = Population(citypopulation, city)
+    population = Population(city, citypopulation)
     cityprinter = CityPrinter(city, population)
     
     
@@ -120,6 +152,11 @@ if __name__=='__main__':
     print("")
     print("Initial City")
     print(cityprinter)
+    for _ in range(3):
+        for __ in range(12):
+            population.step()
+        print(cityprinter)
+        print("A Year Goes By")
 
 
 
