@@ -1,86 +1,127 @@
+import wx
 
 """
-Class that contains our entire world
+Our entire world
 """
 class City(object):
-    def __init__(self, blocks_wide=3, blocks_high=3):
-        self.blocks_wide = blocks_wide
-        self.blocks_high = blocks_high
-        self.blocks = [None for _ in range(blocks_wide * blocks_high)]
     
-    def set_block(self, x, y, block):
-        #print("Setting: " + str(y * self.blocks_high + x))
-        self.blocks[y * self.blocks_high + x] = block
+    def __init__(self, size=20, price=250):
+        self.size = size
+        self.__number_of_houses = size * size
+        self.houses = [[price, None] for _ in range(self.__number_of_houses)]
         
-    def get_block(self, x, y):
-        #print("Getting: " + str(y * self.blocks_high + x))
-        return self.blocks[y * self.blocks_high + x]
-    
-    def print_city(self, blocks=False):
-        if blocks:
-            #TODO: Print Every House on Block
-            printblocks = [None for _ in range(self.blocks_wide * self.blocks_high)]
-            for y in range(self.blocks_high):
-                for x in range(self.blocks_wide):
-                    block = self.get_block(x, y)
-                    printblocks[y * self.blocks_high + x] = block.to_string()
-            overall = "-" * 111 + "\n"
-            for y in range(self.blocks_high):
-                for i in range(5):
-                    toprint = ""
-                    for x in range(self.blocks_wide):
-                        toprint += printblocks[y * self.blocks_high + x].split("\n")[i]
-                    overall += toprint + "|\n"
-                overall += "-" * 111 + "\n"
-            print(overall)
+    def get_house_price(self, x, y):
+        if (x >= 0 and x < self.size) and (y >= 0 and y < self.size):
+            return self.houses[y * self.size + x][0]
         else:
-            # Print block averages
-            for y in range(self.blocks_high):
-                toprint = ""
-                for x in range(self.blocks_wide):
-                    block = self.get_block(x, y)
-                    toprint += str(block.average_value()) + "\t"
-                print(toprint)
+            # If outside the city, the price is zero
+            return 0
+    
+    def set_house_price(self, x, y, price):
+        if (x >= 0 and x < self.size) and (y >= 0 and y < self.size):
+            self.houses[y * self.size + x][0] = price
+            
+    def get_house_occupant(self, x, y):
+        if (x >= 0 and x < self.size) and (y >= 0 and y < self.size):
+            return self.houses[y * self.size + x][1]
+        else:
+            return None
+    
+    def set_house_occupant(self, x, y, person):
+        if (x >= 0 and x < self.size) and (y >= 0 and y < self.size):
+            self.houses[y * self.size + x][1] = person
+    
+    @property
+    def number_of_houses(self):
+        return self.__number_of_houses
+
+"""
+Manages everyone living in our city
+"""
+class Population(object):
+    def __init__(self, size, city):
+        self.__size = size
+        self.__current_step = 0
+        self.city = city
+        self.people = [Person() for _ in range(self.__size)]
+        
+        #Occupy the houses randomly
+        for person in self.people:
+            self.city.size
+    
+    @property
+    def size(self):
+        return self.__size
+    
+    def step(self):
+        self.__current_step += 1
+        
+
+"""
+A person living in our city
+"""
+class Person(object):
+    def __init__(self):
+        self.rent_history = []
+        self.last_moved = 0
+        self.current_x = -1
+        self.current_y = -1
+        
+    
+    def can_move(self, step):
+        if (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24:
+            return True
+        return False
+    
+    def move(self, step, x, y):
+        if (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24:
+            return True
+        return False
     
 
-class Block(object):
-    def __init__(self, value=250):
-        self.houses_wide = 5
-        self.houses_high = 5
-        self.houses = [value for _ in range(self.houses_wide * self.houses_high)]
+"""
+Outputs our city
+"""
+class CityPrinter(object):
     
-    def average_value(self):
-        numhouses = self.houses_wide * self.houses_high
-        cumulative = sum(self.houses)
-        return cumulative/numhouses
-        
-    def get_value(self, x, y):
-        return self.houses[y * self.houses_high + x]
-        
-    def set_value(self, x, y, value):
-        self.houses[y * self.houses_high + x] = value
+    def __init__(self, city, population):
+        self.city = city
+        self.population = population
     
-    def to_string(self):
-        lines = ""
-        for y in range(self.houses_high):
-            toprint = "| "
-            for x in range(self.houses_wide):
-                toprint += str("%3d " % self.get_value(x,y))
-            lines += toprint + "\n"
-        return lines
+    """
+    Write the city to standard out
+    """
+    def __str__(self):
+        output = ""
+        for y in range(self.city.size):
+            row = ""
+            for x in range(self.city.size):
+                occupied_string = "_" if self.city.get_house_occupant(x, y) == None else "X"
+                row += str("%3d%s " % (self.city.get_house_price(x, y), occupied_string))
+            output += row + "\n"
+        return output
+    
 
 if __name__=='__main__':
-    width = 5
-    height = width
-    city = City(width, height)
-    for y in range(height):
-        for x in range(width):
-            block = Block(200 + x * 50 - 30 * y)
-            city.set_block(x, y, block)
-    city.print_city()
-    city.print_city(True)
+    #TODO: Get these from command line arguments
+    citysize = 20
+    price = 250
+    citypopulation = 300
+    
+    city = City(citysize, price)
+    population = Population(citypopulation, city)
+    cityprinter = CityPrinter(city, population)
     
     
+    print("Starting Simulation")
+    print("")
+    print("Number of Houses: " + str(city.number_of_houses))
+    print("Population: " + str(population.size))
+    print("")
+    print("Initial City")
+    print(cityprinter)
+
+
 
 
 
