@@ -40,13 +40,13 @@ class City(object):
     def __init__(self, size=20, price=250):
         self.__size = size
         self.__number_of_houses = size * size
-        self.houses = [House(0) for _ in range(self.__number_of_houses)]
-        for house in self.houses:
+        self.__houses = [House(0) for _ in range(self.__number_of_houses)]
+        for house in self.__houses:
             house.price = price
     
     def get_house(self, coords):
         if self.within_city(coords):
-            return self.houses[self.coords_to_index(coords)]
+            return self.__houses[self.coords_to_index(coords)]
         return None
     
     def coords_to_index(self, coords):
@@ -64,7 +64,16 @@ class City(object):
                 if self.get_house(coords).occupant == None:
                     empty.append(coords)
         return empty
-        
+    
+    @property
+    def houses(self):
+        houses = []
+        for x in range(self.__size):
+            for y in range(self.__size):
+                coords = Coordinates(x=x, y=y)
+                houses.append(coords)
+        return houses
+    
     @property
     def occupied_houses(self):
         occupied = []
@@ -81,11 +90,11 @@ class City(object):
     
     @property
     def max_price(self):
-        return max(self.houses, key=lambda h: h.price).price
+        return max(self.__houses, key=lambda h: h.price).price
     
     @property
     def min_price(self):
-        return min(self.houses, key=lambda h: h.price).price
+        return min(self.__houses, key=lambda h: h.price).price
     
     @property
     def size(self):
@@ -198,13 +207,34 @@ class CityPrinter(object):
         print("Cheapest Place: " + str(self.city.min_price))
         print("Most Expensive Place: " + str(self.city.max_price))
         
-        # TODO: Make this map colour
+        min_price = self.city.min_price
+        max_price = self.city.max_price
         
-        houses = self.city.occupied_houses
-        for house in houses:
+        # Generating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
+        red_range = (0, 0.9)
+        green_range = (0.25, 1.0)
+        blue_range = (1.0, 1.0)
+        
+        # TODO: Check that colors are disting enough to see gradients
+        
+        for house in self.city.houses:
             x = house.x - self.city.size / 2
             y = house.y - self.city.size / 2
-            self.canvas.AddPoint((x, y))
+            price = self.city.get_house(house).price
+            
+            percentage_of_range = 1 - (price - min_price)/(max_price - min_price)
+            
+            red = (((red_range[1] - red_range[0]) * percentage_of_range) + red_range[0]) * 255
+            green = (((green_range[1] - green_range[0]) * percentage_of_range) + green_range[0]) * 255
+            blue = (((blue_range[1] - blue_range[0]) * percentage_of_range) + blue_range[0]) * 255
+            
+            #print("red: " + str(red))
+            #print("green: " + str(green))
+            #print("blue: " + str(blue))
+            
+            
+            col = wx.Colour(red, green, blue, 1)
+            self.canvas.AddPoint((x, y), Color = col)
             #print(str((x, y)))
         #self.canvas.AddPoint((0, 0))
         self.frame.Show()
