@@ -121,8 +121,7 @@ class Population(object):
         self.update_rent(empty_houses)
         self.move_people(people_to_move)
         self.update_rent(occupied_houses)
-        
-        
+    
     def update_rent(self, houses_coords):
         # Figure out new prices and store them in a list
         new_prices = []
@@ -151,7 +150,9 @@ class Population(object):
                 can_move.append(person)
         return can_move
     
-    # TODO: Implement This
+    # TODO: Move people to houses better suited to them
+    # better value with similar neighbours
+    # more neighbours but slightly more expensive
     def move_people(self, people):
         pass
     
@@ -190,12 +191,14 @@ class CityPrinter(object):
         self.app = wx.PySimpleApp()
         self.w = self.city.size + 100
         self.h = self.city.size + 100
-        self.frame = wx.Frame(None, -1, 'TITLE', size=(self.w, self.h))
+        self.frame = wx.Frame(None, -1, 'Occupied Houses', size=(self.w, self.h))
         self.canvas = FloatCanvas(self.frame, -1)
     
     def create_heatmap(self, occupied_only = False):
         print("Cheapest Place: " + str(self.city.min_price))
         print("Most Expensive Place: " + str(self.city.max_price))
+        
+        # TODO: Make this map colour
         
         houses = self.city.occupied_houses
         for house in houses:
@@ -224,9 +227,9 @@ class CityPrinter(object):
 
 if __name__=='__main__':
     #TODO: Get these from command line arguments
-    citysize = 256
+    citysize = 100
     price = 250
-    citypopulation = 200*200
+    citypopulation = 8000
     
     time1 = time.time()
     city = City(citysize, price)
@@ -250,6 +253,14 @@ if __name__=='__main__':
     time2 = time.time()
     print('took %0.3f ms' % ((time2-time1) * 1000.0))
     cityprinter.create_heatmap()
+
+
+
+
+
+
+
+
 
 
 
