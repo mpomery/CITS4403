@@ -2,11 +2,13 @@ import wx
 import random
 import collections
 
+# Named tuples are gret if we want an object as a data structure that we interact with
+# That doesn't need its own function
 Coordinates = collections.namedtuple('Coordinates', 'x y')
-
+House = collections.namedtuple('House', 'location price')
 
 """
-Our entire world
+Our world. Holds all the houses.
 """
 class City(object):
     
@@ -16,21 +18,21 @@ class City(object):
         self.houses = [[price, None] for _ in range(self.__number_of_houses)]
         
     def get_house_price(self, coords):
-        if (0 <= coords.x < self.size) and (0 <= coords.y < self.size):
+        if 0 <= coords.x < self.size and 0 <= coords.y < self.size:
             return self.houses[coords.y * self.size + coords.x][0]
         return 0
     
     def set_house_price(self, coords, price):
-        if (0 <= coords.x < self.size) and (0 <= coords.y < self.size):
+        if 0 <= coords.x < self.size and 0 <= coords.y < self.size:
             self.houses[coords.y * self.size + coords.x][0] = price
     
     def get_house_occupant(self, coords):
-        if (0 <= coords.x < self.size) and (0 <= coords.y < self.size):
+        if 0 <= coords.x < self.size and 0 <= coords.y < self.size:
             return self.houses[coords.y * self.size + coords.x][1]
         return None
     
     def set_house_occupant(self, coords, person):
-        if (0 <= coords.x < self.size) and (0 <= coords.y < self.size):
+        if 0 <= coords.x < self.size and 0 <= coords.y < self.size:
             self.houses[coords.y * self.size + coords.x][1] = person
     
     @property
@@ -75,16 +77,13 @@ class Population(object):
         self.__current_step += 1
         empty_houses = self.city.empty_houses
         people_to_move = self.get_people_to_move()
-        print("End of Month " + str(self.__current_step))
-        print("People Who Can Move: " + str(len(people_to_move)))
-        print("Houses to Move Into: " + str(len(empty_houses)))
+        #print("End of Month " + str(self.__current_step))
+        #print("People Who Can Move: " + str(len(people_to_move)))
+        #print("Houses to Move Into: " + str(len(empty_houses)))
         for house in empty_houses:
             houseprice = self.city.get_house_price(house)
             houseprice = houseprice - 5
             self.city.set_house_price(house, houseprice)
-        
-        
-        
     
     def get_people_to_move(self):
         can_move = []
@@ -164,10 +163,10 @@ if __name__=='__main__':
     print("Initial City")
     print(cityprinter)
     for _ in range(3):
+        print("End Of Year " + str(_ + 1))
         for __ in range(12):
             population.step()
         print(cityprinter)
-        print("A Year Goes By")
 
 
 
