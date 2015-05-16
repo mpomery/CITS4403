@@ -62,6 +62,16 @@ class City(object):
                 if self.get_house(coords).occupant == None:
                     empty.append(coords)
         return empty
+        
+    @property
+    def occupied_houses(self):
+        occupied = []
+        for x in range(self.size):
+            for y in range(self.size):
+                coords = Coordinates(x=x, y=y)
+                if self.get_house(coords).occupant != None:
+                    occupied.append(coords)
+        return occupied
     
     @property
     def number_of_houses(self):
@@ -83,7 +93,7 @@ class Population(object):
         self.__size = size
         self.__current_step = 0
         self.city = city
-        self.people = [Person() for _ in range(self.__size)]
+        self.people = [Person(city) for _ in range(self.__size)]
         
         #Occupy the houses randomly
         homes = []
@@ -93,40 +103,51 @@ class Population(object):
                 homes.insert(random.randint(0, len(homes)), coords)
         for person in self.people:
             home = homes.pop(0)
-            self.move_person(person, home)
+            person.move(self.__current_step, home)
     
     def step(self):
         self.__current_step += 1
         
-        self.update_rent(self.city.empty_houses)
+        empty_houses = self.city.empty_houses
+        occupied_houses = self.city.occupied_houses
+        people_to_move = self.people_to_move
         
-        people_to_move = self.get_people_to_move()
+        self.update_rent(empty_houses)
+        self.move_people(people_to_move)
+        self.update_rent(occupied_houses)
+        
         
     def update_rent(self, houses_coords):
         # Figure out new prices and store them in a list
         new_prices = []
         for coords in houses_coords:
+            # TODO: Update price depending on surrounding prices
             #average_neighbour_price = 0
             house = self.city.get_house(coords)
-            new_price = house.price - 5
+            new_price = house.price
+            if house.occupant == None:
+                new_price = house.price - 5
+            elif house.occupant.can_move(self.__current_step):
+                new_price = house.price + 5
+            
             new_prices.append((coords, new_price))
+                
         
         # Update all the prices at once so that we don't have race conditions
         for price in new_prices:
             self.city.get_house(price[0]).price = price[1]
-
     
-    def get_people_to_move(self):
+    @property
+    def people_to_move(self):
         can_move = []
         for person in self.people:
             if person.can_move(self.__current_step):
                 can_move.append(person)
         return can_move
     
-    # TODO: Check this works
-    def move_person(self, person, coords):
-        self.city.get_house(coords).occupant = person
-        person.move(0, coords, self.city.get_house(coords).price)
+    # TODO: Implement This
+    def move_people(self, people):
+        pass
     
     @property
     def size(self):
@@ -136,18 +157,18 @@ class Population(object):
 A person living in our city
 """
 class Person(object):
-    def __init__(self):
+    def __init__(self, city):
         self.rent_history = []
         self.last_moved = 0
         self.current_location = Coordinates(-1, -1)
+        self.city = city
     
     def can_move(self, step):
-        if (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24:
-            return True
-        return False
+        return (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24
     
-    def move(self, step, coords, price):
-        self.rent_history.append(price)
+    def move(self, step, coords):
+        self.city.get_house(coords).occupant = self
+        self.rent_history.append(self.city.get_house(coords).price)
         self.last_moved = step
         self.current_location = coords
 
