@@ -1,6 +1,8 @@
 import wx
+from wx.lib.floatcanvas.FloatCanvas import FloatCanvas
 import random
 import collections
+import time
 
 # Named tuples are gret if we want an object as a data structure that we interact with that doesn't
 # need its own function, and won't need changing. Therefore they are only good for passing information
@@ -36,7 +38,7 @@ Our world. Holds all the houses.
 class City(object):
     
     def __init__(self, size=20, price=250):
-        self.size = size
+        self.__size = size
         self.__number_of_houses = size * size
         self.houses = [House(0) for _ in range(self.__number_of_houses)]
         for house in self.houses:
@@ -48,16 +50,16 @@ class City(object):
         return None
     
     def coords_to_index(self, coords):
-        return coords.y * self.size + coords.x
+        return coords.y * self.__size + coords.x
     
     def within_city(self, coords):
-        return (0 <= coords.x < self.size and 0 <= coords.y < self.size)
+        return (0 <= coords.x < self.__size and 0 <= coords.y < self.__size)
     
     @property
     def empty_houses(self):
         empty = []
-        for x in range(self.size):
-            for y in range(self.size):
+        for x in range(self.__size):
+            for y in range(self.__size):
                 coords = Coordinates(x=x, y=y)
                 if self.get_house(coords).occupant == None:
                     empty.append(coords)
@@ -66,8 +68,8 @@ class City(object):
     @property
     def occupied_houses(self):
         occupied = []
-        for x in range(self.size):
-            for y in range(self.size):
+        for x in range(self.__size):
+            for y in range(self.__size):
                 coords = Coordinates(x=x, y=y)
                 if self.get_house(coords).occupant != None:
                     occupied.append(coords)
@@ -84,6 +86,10 @@ class City(object):
     @property
     def min_price(self):
         return min(self.houses, key=lambda h: h.price).price
+    
+    @property
+    def size(self):
+        return self.__size
 
 """
 Manages everyone living in our city
@@ -180,10 +186,26 @@ class CityPrinter(object):
     def __init__(self, city, population):
         self.city = city
         self.population = population
+        
+        self.app = wx.PySimpleApp()
+        self.w = self.city.size + 100
+        self.h = self.city.size + 100
+        self.frame = wx.Frame(None, -1, 'TITLE', size=(self.w, self.h))
+        self.canvas = FloatCanvas(self.frame, -1)
     
     def create_heatmap(self, occupied_only = False):
         print("Cheapest Place: " + str(self.city.min_price))
         print("Most Expensive Place: " + str(self.city.max_price))
+        
+        houses = self.city.occupied_houses
+        for house in houses:
+            x = house.x - self.city.size / 2
+            y = house.y - self.city.size / 2
+            self.canvas.AddPoint((x, y))
+            #print(str((x, y)))
+        #self.canvas.AddPoint((0, 0))
+        self.frame.Show()
+        self.app.MainLoop()
     
     """
     Write the city to standard out for quick testing and debugging.
@@ -202,10 +224,11 @@ class CityPrinter(object):
 
 if __name__=='__main__':
     #TODO: Get these from command line arguments
-    citysize = 20
+    citysize = 256
     price = 250
-    citypopulation = 200
+    citypopulation = 200*200
     
+    time1 = time.time()
     city = City(citysize, price)
     population = Population(city, citypopulation)
     cityprinter = CityPrinter(city, population)
@@ -217,12 +240,15 @@ if __name__=='__main__':
     print("Population: " + str(population.size))
     print("")
     print("Initial City")
-    print(cityprinter)
+    #print(cityprinter)
     for _ in range(3):
-        print("End Of Year " + str(_ + 1))
+        #print("End Of Year " + str(_ + 1))
         for __ in range(12):
             population.step()
-        print(cityprinter)
+        #print(cityprinter)
+    print("Generating Image")
+    time2 = time.time()
+    print('took %0.3f ms' % ((time2-time1) * 1000.0))
     cityprinter.create_heatmap()
 
 
