@@ -76,6 +76,38 @@ class City(object):
     def within_city(self, coords):
         return (0 <= coords.x < self.__size and 0 <= coords.y < self.__size)
     
+    def update_rent(self, houses_coords, step):
+        # Figure out new prices and store them in a list
+        new_prices = []
+        for coords in houses_coords:
+            # TODO: Update price depending on surrounding prices
+            #average_neighbour_price = 0
+            house = self.get_house(coords)
+            new_price = house.price
+            
+            neighbourhood = self.get_neighbourhood(coords)
+            average_rent = sum(h.price/len(neighbourhood) for h in neighbourhood)
+            num_occupied = sum(int(h.occupant != None) for h in neighbourhood)
+            num_neighbours = len(neighbourhood)
+            
+            if house.occupant == None:
+                if house.price > average_rent:
+                    new_price = average_rent * 0.99
+                else:
+                    new_price = house.price * 1.1
+            elif house.occupant.time_at_house(step) % 6 == 0:
+                if house.price > average_rent:
+                    new_price = house.price * 1.01
+                else:
+                    new_price = house.price * 1.1
+            
+            new_prices.append((coords, int(new_price)))
+                
+        
+        # Update all the prices at once so that we don't have race conditions
+        for price in new_prices:
+            self.get_house(price[0]).price = price[1]
+    
     @property
     def empty_houses(self):
         empty = []
@@ -148,41 +180,9 @@ class Population(object):
         occupied_houses = self.city.occupied_houses
         people_to_move = self.people_to_move
         
-        self.update_rent(empty_houses)
+        self.city.update_rent(empty_houses, self.__current_step)
         self.move_people(people_to_move)
-        self.update_rent(occupied_houses)
-    
-    def update_rent(self, houses_coords):
-        # Figure out new prices and store them in a list
-        new_prices = []
-        for coords in houses_coords:
-            # TODO: Update price depending on surrounding prices
-            #average_neighbour_price = 0
-            house = self.city.get_house(coords)
-            new_price = house.price
-            
-            neighbourhood = self.city.get_neighbourhood(coords)
-            average_rent = sum(h.price/len(neighbourhood) for h in neighbourhood)
-            num_occupied = sum(int(h.occupant != None) for h in neighbourhood)
-            num_neighbours = len(neighbourhood)
-            
-            if house.occupant == None:
-                if house.price > average_rent:
-                    new_price = average_rent * 0.99
-                else:
-                    new_price = house.price * 1.1
-            elif house.occupant.time_at_house(self.__current_step) % 6 == 0:
-                if house.price > average_rent:
-                    new_price = house.price * 1.01
-                else:
-                    new_price = house.price * 1.1
-            
-            new_prices.append((coords, int(new_price)))
-                
-        
-        # Update all the prices at once so that we don't have race conditions
-        for price in new_prices:
-            self.city.get_house(price[0]).price = price[1]
+        self.city.update_rent(occupied_houses, self.__current_step)
     
     @property
     def people_to_move(self):
