@@ -1,9 +1,51 @@
 \section{Implementation}
 
-\subsection{The City}
-
-
-\subsection{People}
 \par
+- Agent based model \\
+- Two agents that interact \\
+- Houses and People \\
+- Both act depending on the other \\
 
+\par
+- Named Tuples \\
+- Good for simple data structures that we want to pass around
+- Like Coordinates
 
+\begin{lstlisting}[language=Python]
+import collections
+
+Coordinates = collections.namedtuple('Coordinates', 'x y')
+\end{lstlisting}
+
+\subsection{Agents}
+
+\subsubsection{House}
+\par
+- Have a price and possibly an occupant \\
+- Increase rent after certain amount of time \\
+- Decrease rent to try and get people to rent it \\
+
+\subsubsection{People}
+\par
+- Similar to real people \\
+  - Have an income \\
+  - Have a bank balance \\
+  - Pay rent every month \\
+  - Can only move when rent agreement finishes \\
+- Unlike real world \\
+  - No share houses \\
+  - No income increases \\
+  - Don't have sentience \\
+
+\subsection{Managing the Agents}
+\subsubsection{City}
+\par
+- Manages all the houses \\
+- Makes sure rent changes \\
+
+\subsubsection{Population}
+\par
+- Manages all the people \\
+- Makes sure they are happy \\
+- Make sure they move if they aren't \\
+- Each step updates rent of old houses, moves people, then updates rent of occupied houses \\
