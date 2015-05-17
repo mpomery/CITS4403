@@ -320,7 +320,7 @@ if __name__=='__main__':
     # TODO: Get these from command line arguments
     citysize = 20
     price = 250
-    citypopulation = int(citysize*citysize*0) + 10
+    citypopulation = int(citysize*citysize*0.125)
     neighbourhood_size = 3
     
     time1 = time.time()
