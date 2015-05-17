@@ -65,8 +65,8 @@ class City(object):
                     neighbour = self.get_house(neighbour_coords)
                     if neighbour != None:
                         neighbours.append(neighbour)
-                    else:
-                        neighbours.append(House(0, None))
+                    #else:
+                    #    neighbours.append(House(0, None))
         #print("Fin")
         return neighbours
     
@@ -86,23 +86,35 @@ class City(object):
             new_price = house.price
             
             neighbourhood = self.get_neighbourhood(coords)
-            average_rent = sum(h.price/len(neighbourhood) for h in neighbourhood)
-            num_occupied = sum(int(h.occupant != None) for h in neighbourhood)
+            
             num_neighbours = len(neighbourhood)
+            num_occupied = sum(int(h.occupant != None) for h in neighbourhood)
+            num_unoccupied = num_neighbours - num_occupied
+            
+            average_rent = sum(h.price for h in neighbourhood)/len(neighbourhood)
+            if num_occupied != 0:
+                average_occupied = sum(h.price if h.occupant != None else 0 for h in neighbourhood)/num_occupied
+            else:
+                average_occupied = 0
+            if num_unoccupied != 0:
+                average_unoccupied = sum(h.price if h.occupant == None else 0 for h in neighbourhood)/num_unoccupied
+            else:
+                average_unoccupied = 0
             
             if house.occupant == None:
-                if house.price > average_rent:
-                    new_price = average_rent * 0.99
+                if house.price >= average_occupied:
+                    new_price = house.price * 0.95
+                elif house.price > average_unoccupied:
+                    new_price = house.price * 0.95
+                elif house.price >= average_rent:
+                    new_price = house.price * 0.99
                 else:
-                    new_price = house.price * 1.1
-            elif house.occupant.time_at_house(step) % 6 == 0:
-                if house.price > average_rent:
+                    #difference = abs(average_unoccupied - average_occupied)
                     new_price = house.price * 1.01
-                else:
-                    new_price = house.price * 1.1
+            elif house.occupant.time_at_house(step) % 6 == 0:
+                new_price = house.price + 5
             
             new_prices.append((coords, int(new_price)))
-                
         
         # Update all the prices at once so that we don't have race conditions
         for price in new_prices:
@@ -206,11 +218,15 @@ class Population(object):
 A person living in our city
 """
 class Person(object):
-    def __init__(self, city):
+    def __init__(self, city, income = None):
         self.rent_history = []
         self.last_moved = 0
         self.current_location = Coordinates(-1, -1)
         self.city = city
+        if income == None:
+            self.income = 300
+        else:
+            self.income = income
     
     def can_move(self, step):
         return (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24
@@ -233,7 +249,7 @@ class CityPrinter(object):
         self.city = city
         self.population = population
         
-        self.app = wx.PySimpleApp()
+        self.app = wx.App(False)
         self.w = self.city.size + 100
         self.h = self.city.size + 120
         self.frame = wx.Frame(None, -1, 'Heat Map', size=(self.w, self.h))
@@ -288,6 +304,8 @@ class CityPrinter(object):
     """
     def __str__(self):
         output = ""
+        output += "Cheapest Place: " + str(self.city.min_price) + "\n"
+        output += "Most Expensive Place: " + str(self.city.max_price) + "\n"
         for y in range(self.city.size):
             row = ""
             for x in range(self.city.size):
@@ -302,7 +320,7 @@ if __name__=='__main__':
     # TODO: Get these from command line arguments
     citysize = 20
     price = 250
-    citypopulation = int(citysize*citysize*0.6)
+    citypopulation = int(citysize*citysize*0) + 10
     neighbourhood_size = 3
     
     time1 = time.time()
@@ -316,10 +334,10 @@ if __name__=='__main__':
     print("Number of Houses: " + str(city.number_of_houses))
     print("Population: " + str(population.size))
     print("")
-    print("Initial City")
-    print(cityprinter)
+    #print("Initial City")
+    #print(cityprinter)
     for _ in range(3):
-        print("End Of Year " + str(_ + 1))
+        #print("End Of Year " + str(_ + 1))
         for __ in range(12):
             population.step()
         print(cityprinter)
