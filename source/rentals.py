@@ -113,7 +113,7 @@ class City(object):
         empty = []
         for x in range(self.__size):
             for y in range(self.__size):
-                coords = Coordinates(x=x, y=y)
+                coords = Coordinates(x, y)
                 if self.get_house(coords).occupant == None:
                     empty.append(coords)
         return empty
@@ -123,7 +123,7 @@ class City(object):
         houses = []
         for x in range(self.__size):
             for y in range(self.__size):
-                coords = Coordinates(x=x, y=y)
+                coords = Coordinates(x, y)
                 houses.append(coords)
         return houses
     
@@ -132,7 +132,7 @@ class City(object):
         occupied = []
         for x in range(self.__size):
             for y in range(self.__size):
-                coords = Coordinates(x=x, y=y)
+                coords = Coordinates(x, y)
                 if self.get_house(coords).occupant != None:
                     occupied.append(coords)
         return occupied
@@ -167,7 +167,7 @@ class Population(object):
         homes = []
         for x in range(self.city.size):
             for y in range(self.city.size):
-                coords = Coordinates(x=x, y=y)
+                coords = Coordinates(x, y)
                 homes.insert(random.randint(0, len(homes)), coords)
         for person in self.people:
             home = homes.pop(0)
