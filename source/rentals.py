@@ -204,41 +204,46 @@ class CityPrinter(object):
         self.canvas = FloatCanvas(self.frame, -1)
     
     def create_heatmap(self, occupied_only = False):
-        print("Cheapest Place: " + str(self.city.min_price))
-        print("Most Expensive Place: " + str(self.city.max_price))
-        
+        #print("Cheapest Place: " + str(self.city.min_price))
+        #print("Most Expensive Place: " + str(self.city.max_price))
+        time1 = time.time()
         min_price = self.city.min_price
         max_price = self.city.max_price
-        
-        # Generating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
-        red_range = (0, 0.9)
-        green_range = (0.25, 1.0)
-        blue_range = (1.0, 1.0)
-        
-        # TODO: Check that colors are disting enough to see gradients
         
         for house in self.city.houses:
             x = house.x - self.city.size / 2
             y = house.y - self.city.size / 2
-            price = self.city.get_house(house).price
-            
-            percentage_of_range = 1 - (price - min_price)/(max_price - min_price)
-            
-            red = (((red_range[1] - red_range[0]) * percentage_of_range) + red_range[0]) * 255
-            green = (((green_range[1] - green_range[0]) * percentage_of_range) + green_range[0]) * 255
-            blue = (((blue_range[1] - blue_range[0]) * percentage_of_range) + blue_range[0]) * 255
-            
-            #print("red: " + str(red))
-            #print("green: " + str(green))
-            #print("blue: " + str(blue))
-            
-            
-            col = wx.Colour(red, green, blue, 1)
+            col = self.color(house, min_price, max_price)
             self.canvas.AddPoint((x, y), Color = col)
             #print(str((x, y)))
         #self.canvas.AddPoint((0, 0))
+        time2 = time.time()
+        print('Generating Image took %0.3f ms' % ((time2-time1) * 1000.0))
         self.frame.Show()
         self.app.MainLoop()
+    
+    # TODO: Check that colors are distinct enough to see gradients
+    def color(self, house, min_price, max_price):
+        #print("Colouring In")
+        price = self.city.get_house(house).price
+        
+        if self.city.get_house(house).occupant != None:
+            # Generating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
+            red_range = (0, 0.9)
+            green_range = (0.25, 1.0)
+            blue_range = (1.0, 1.0)
+        else:
+            red_range = (1.0, 1.0)
+            green_range = (0, 0)
+            blue_range = (0, 0)
+        
+        percentage_of_range = 1 - (price - min_price)/(max_price - min_price)
+        
+        red = (((red_range[1] - red_range[0]) * percentage_of_range) + red_range[0]) * 255
+        green = (((green_range[1] - green_range[0]) * percentage_of_range) + green_range[0]) * 255
+        blue = (((blue_range[1] - blue_range[0]) * percentage_of_range) + blue_range[0]) * 255
+        
+        return wx.Colour(red, green, blue, 1)
     
     """
     Write the city to standard out for quick testing and debugging.
@@ -259,7 +264,7 @@ if __name__=='__main__':
     #TODO: Get these from command line arguments
     citysize = 100
     price = 250
-    citypopulation = 8000
+    citypopulation = int(citysize*citysize*0.8)
     
     time1 = time.time()
     city = City(citysize, price)
@@ -281,7 +286,7 @@ if __name__=='__main__':
         #print(cityprinter)
     print("Generating Image")
     time2 = time.time()
-    print('took %0.3f ms' % ((time2-time1) * 1000.0))
+    print('Simulation took %0.3f ms' % ((time2-time1) * 1000.0))
     cityprinter.create_heatmap()
 
 
