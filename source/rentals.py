@@ -1,3 +1,4 @@
+from __future__ import division
 import wx
 from wx.lib.floatcanvas.FloatCanvas import FloatCanvas
 import random
@@ -37,7 +38,8 @@ Our world. Holds all the houses.
 """
 class City(object):
     
-    def __init__(self, size=20, price=250):
+    def __init__(self, size=20, price=250, neighbourhood_size=3):
+        self.neighbourhood_size = neighbourhood_size
         self.__size = size
         self.__number_of_houses = size * size
         self.__houses = [House(0) for _ in range(self.__number_of_houses)]
@@ -48,6 +50,25 @@ class City(object):
         if self.within_city(coords):
             return self.__houses[self.coords_to_index(coords)]
         return None
+    
+    def get_neighbourhood(self, coords):
+        neighbours = []
+        #print("Neighbourhood for: " + str(coords))
+        #print(str(coords.x) + " " + str(self.neighbourhood_size))
+        #print("x.range = " + str(range(coords.x - self.neighbourhood_size, coords.x + self.neighbourhood_size + 1)))
+        #print("y.range = " + str(range(coords.y - self.neighbourhood_size, coords.y + self.neighbourhood_size + 1)))
+        for x in range(coords.x - self.neighbourhood_size, coords.x + self.neighbourhood_size + 1):
+            for y in range(coords.y - self.neighbourhood_size, coords.y + self.neighbourhood_size + 1):
+                if coords.x != x and coords.y != y:
+                    neighbour_coords = Coordinates(x, y)
+                    #print(neighbour_coords )
+                    neighbour = self.get_house(neighbour_coords)
+                    if neighbour != None:
+                        neighbours.append(neighbour)
+                    else:
+                        neighbours.append(House(0, None))
+        #print("Fin")
+        return neighbours
     
     def coords_to_index(self, coords):
         return coords.y * self.__size + coords.x
@@ -139,12 +160,24 @@ class Population(object):
             #average_neighbour_price = 0
             house = self.city.get_house(coords)
             new_price = house.price
-            if house.occupant == None:
-                new_price = house.price - 5
-            elif house.occupant.can_move(self.__current_step):
-                new_price = house.price + 5
             
-            new_prices.append((coords, new_price))
+            neighbourhood = self.city.get_neighbourhood(coords)
+            average_rent = sum(h.price/len(neighbourhood) for h in neighbourhood)
+            num_occupied = sum(int(h.occupant != None) for h in neighbourhood)
+            num_neighbours = len(neighbourhood)
+            
+            if house.occupant == None:
+                if house.price > average_rent:
+                    new_price = average_rent * 0.99
+                else:
+                    new_price = house.price * 1.1
+            elif house.occupant.time_at_house(self.__current_step) % 6 == 0:
+                if house.price > average_rent:
+                    new_price = house.price * 1.01
+                else:
+                    new_price = house.price * 1.1
+            
+            new_prices.append((coords, int(new_price)))
                 
         
         # Update all the prices at once so that we don't have race conditions
@@ -182,6 +215,9 @@ class Person(object):
     def can_move(self, step):
         return (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24
     
+    def time_at_house(self, step):
+        return (step - self.last_moved)
+    
     def move(self, step, coords):
         self.city.get_house(coords).occupant = self
         self.rent_history.append(self.city.get_house(coords).price)
@@ -199,13 +235,13 @@ class CityPrinter(object):
         
         self.app = wx.PySimpleApp()
         self.w = self.city.size + 100
-        self.h = self.city.size + 100
-        self.frame = wx.Frame(None, -1, 'Occupied Houses', size=(self.w, self.h))
+        self.h = self.city.size + 120
+        self.frame = wx.Frame(None, -1, 'Heat Map', size=(self.w, self.h))
         self.canvas = FloatCanvas(self.frame, -1)
     
     def create_heatmap(self, occupied_only = False):
-        #print("Cheapest Place: " + str(self.city.min_price))
-        #print("Most Expensive Place: " + str(self.city.max_price))
+        print("Cheapest Place: " + str(self.city.min_price))
+        print("Most Expensive Place: " + str(self.city.max_price))
         time1 = time.time()
         min_price = self.city.min_price
         max_price = self.city.max_price
@@ -222,20 +258,22 @@ class CityPrinter(object):
         self.frame.Show()
         self.app.MainLoop()
     
-    # TODO: Check that colors are distinct enough to see gradients
+    # TODO: Make the gradients better
     def color(self, house, min_price, max_price):
         #print("Colouring In")
         price = self.city.get_house(house).price
         
         if self.city.get_house(house).occupant != None:
             # Generating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
+            # Approximating it of course
             red_range = (0, 0.9)
             green_range = (0.25, 1.0)
             blue_range = (1.0, 1.0)
         else:
+            # Colour Shifting it to red here
             red_range = (1.0, 1.0)
-            green_range = (0, 0)
-            blue_range = (0, 0)
+            green_range = (0, 0.9)
+            blue_range = (0.25, 1.0)
         
         percentage_of_range = 1 - (price - min_price)/(max_price - min_price)
         
@@ -261,13 +299,14 @@ class CityPrinter(object):
     
 
 if __name__=='__main__':
-    #TODO: Get these from command line arguments
-    citysize = 100
+    # TODO: Get these from command line arguments
+    citysize = 20
     price = 250
-    citypopulation = int(citysize*citysize*0.8)
+    citypopulation = int(citysize*citysize*0.6)
+    neighbourhood_size = 3
     
     time1 = time.time()
-    city = City(citysize, price)
+    city = City(citysize, price, neighbourhood_size)
     population = Population(city, citypopulation)
     cityprinter = CityPrinter(city, population)
     
@@ -278,12 +317,12 @@ if __name__=='__main__':
     print("Population: " + str(population.size))
     print("")
     print("Initial City")
-    #print(cityprinter)
+    print(cityprinter)
     for _ in range(3):
-        #print("End Of Year " + str(_ + 1))
+        print("End Of Year " + str(_ + 1))
         for __ in range(12):
             population.step()
-        #print(cityprinter)
+        print(cityprinter)
     print("Generating Image")
     time2 = time.time()
     print('Simulation took %0.3f ms' % ((time2-time1) * 1000.0))
