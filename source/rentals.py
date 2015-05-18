@@ -39,7 +39,7 @@ Our world. Holds all the houses.
 """
 class City(object):
     
-    def __init__(self, size=20, neighbourhood_size=3):
+    def __init__(self, size, neighbourhood_size=3):
         self.neighbourhood_size = neighbourhood_size
         self.__size = size
         self.__number_of_houses = size * size
@@ -54,21 +54,13 @@ class City(object):
     
     def get_neighbourhood(self, coords):
         neighbours = []
-        #print("Neighbourhood for: " + str(coords))
-        #print(str(coords.x) + " " + str(self.neighbourhood_size))
-        #print("x.range = " + str(range(coords.x - self.neighbourhood_size, coords.x + self.neighbourhood_size + 1)))
-        #print("y.range = " + str(range(coords.y - self.neighbourhood_size, coords.y + self.neighbourhood_size + 1)))
         for x in range(coords.x - self.neighbourhood_size, coords.x + self.neighbourhood_size + 1):
             for y in range(coords.y - self.neighbourhood_size, coords.y + self.neighbourhood_size + 1):
                 if coords.x != x and coords.y != y:
                     neighbour_coords = Coordinates(x, y)
-                    #print(neighbour_coords )
                     neighbour = self.get_house(neighbour_coords)
                     if neighbour != None:
                         neighbours.append(neighbour)
-                    #else:
-                    #    neighbours.append(House(0, None))
-        #print("Fin")
         return neighbours
     
     def coords_to_index(self, coords):
@@ -81,8 +73,7 @@ class City(object):
         # Figure out new prices and store them in a list
         new_prices = []
         for coords in houses_coords:
-            # TODO: Update price depending on surrounding prices
-            #average_neighbour_price = 0
+            # TODO: Check this works with moving people
             house = self.get_house(coords)
             new_price = house.price
             
@@ -110,7 +101,6 @@ class City(object):
                 elif house.price >= average_rent:
                     new_price = house.price * 0.99
                 else:
-                    #difference = abs(average_unoccupied - average_occupied)
                     new_price = house.price * 1.01
             elif house.occupant.time_at_house(step) % 6 == 0:
                 new_price = house.price + 5
@@ -170,7 +160,7 @@ class City(object):
 Manages everyone living in our city
 """
 class Population(object):
-    def __init__(self, city, size=300):
+    def __init__(self, city, size):
         self.__size = size
         self.__current_step = 0
         self.city = city
@@ -194,7 +184,7 @@ class Population(object):
         people_to_move = self.people_to_move
         
         self.city.update_rent(empty_houses, self.__current_step)
-        self.move_people(people_to_move)
+        self.move_people(people_to_move, empty_houses)
         self.city.update_rent(occupied_houses, self.__current_step)
     
     @property
@@ -208,26 +198,53 @@ class Population(object):
     # TODO: Move people to houses better suited to them
     # better value with similar neighbours
     # more neighbours but slightly more expensive
-    def move_people(self, people):
-        pass
+    def move_people(self, people, empty_houses):
+        #print("Moving People")
+        people.sort(key=lambda p: p.income)
+        empty_houses.sort(key=lambda h: self.city.get_house(h).price)
+        if len(people) > 0:
+            moves = []
+            #print("Number of people to move: " + str(len(people)))
+            #print(people[0].income)
+            #print(self.city.get_house(empty_houses[0]).price)
+            for person in people:
+                if person.is_happy:
+                    continue
+                if len(empty_houses) > 0:
+                    moves.append((person, empty_houses[0]))
+                    empty_houses.pop(0)
+            
+            # Update all the prices at once so that we don't have race conditions
+            for m in moves:
+                #print(m[0])
+                m[0].move(self.__current_step, m[1])
+            
     
     @property
     def size(self):
         return self.__size
+        
+    @property
+    def min_income(self):
+        return min(self.people, key=lambda p: p.income).income
+        
+    @property
+    def max_income(self):
+        return max(self.people, key=lambda p: p.income).income
 
 """
 A person living in our city
 """
 class Person(object):
     def __init__(self, city, income = None):
-        self.rent_history = []
+        self.__rent_history = []
         self.last_moved = 0
         self.current_location = Coordinates(-1, -1)
         self.city = city
         if income == None:
-            self.income = 300
+            self.__income = random.randint(270, 600)
         else:
-            self.income = income
+            self.__income = income
     
     def can_move(self, step):
         return (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24
@@ -237,9 +254,24 @@ class Person(object):
     
     def move(self, step, coords):
         self.city.get_house(coords).occupant = self
-        self.rent_history.append(self.city.get_house(coords).price)
+        if self.current_location != Coordinates(-1, -1):
+            self.city.get_house(self.current_location).occupant = None
+        self.__rent_history.append(self.city.get_house(coords).price)
         self.last_moved = step
         self.current_location = coords
+    
+    @property
+    def is_happy(self):
+        # Happy if rent is less than 80% of income
+        return self.city.get_house(self.current_location).price <= (0.8  * self.income)
+    
+    @property
+    def income(self):
+        return self.__income
+        
+    @property
+    def rent_history(self):
+        return self.__rent_history
 
 """
 Outputs our city
@@ -253,34 +285,64 @@ class CityPrinter(object):
         self.app = wx.App(False)
         self.w = self.city.size + 100
         self.h = self.city.size + 120
-        self.frame = wx.Frame(None, -1, 'Heat Map', size=(self.w, self.h))
-        self.canvas = FloatCanvas(self.frame, -1)
+        self.frame_rent = wx.Frame(None, -1, 'Rent Map', size=(self.w, self.h))
+        self.frame_income = wx.Frame(None, -1, 'Income Map', size=(self.w, self.h))
+        self.canvas_rent = FloatCanvas(self.frame_rent, -1)
+        self.canvas_income = FloatCanvas(self.frame_income, -1)
     
-    def create_heatmap(self, occupied_only = False):
-        print("Cheapest Place: " + str(self.city.min_price))
-        print("Most Expensive Place: " + str(self.city.max_price))
+    def create_heatmaps(self):
+        self.create_rent_map()
+        self.create_income_map()
+        self.app.MainLoop()
+    
+    def create_rent_map(self):
+        print("Lowest Rent: " + str(self.city.min_price))
+        print("Highest Rent: " + str(self.city.max_price))
         min_price = self.city.min_price
         max_price = self.city.max_price
 
         time1 = time.time()
+        print("Generating Rent Map")
         
         for house in self.city.houses:
             x = house.x - self.city.size / 2
             y = house.y - self.city.size / 2
-            col = self.color(house, min_price, max_price)
-            self.canvas.AddPoint((x, y), Color = col)
+            col = self.color(self.city.get_house(house).price, min_price, max_price, \
+                    self.city.get_house(house).occupant == None)
+            self.canvas_rent.AddPoint((x, y), Color = col)
         
         time2 = time.time()
         print('Generating Image took %0.3f ms' % ((time2-time1) * 1000.0))
         
-        self.frame.Show()
-        self.app.MainLoop()
+        self.frame_rent.Show()
     
-    def color(self, house, min_price, max_price):
-        #print("Colouring In")
-        price = self.city.get_house(house).price
+    # TODO: Finish this
+    def create_income_map(self):
+        print("Lowest Income: " + str(self.population.min_income))
+        print("Highest Income: " + str(self.population.max_income))
+        min_income = self.population.min_income
+        max_income = self.population.max_income
+
+        time1 = time.time()
+        print("Generating Income Map")
         
-        if self.city.get_house(house).occupant != None:
+        for house in self.city.houses:
+            x = house.x - self.city.size / 2
+            y = house.y - self.city.size / 2
+            person = self.city.get_house(house).occupant
+            if person != None:
+                col = self.color(person.income, min_income, max_income)
+                self.canvas_income.AddPoint((x, y), Color = col)
+        
+        time2 = time.time()
+        print('Generating Image took %0.3f ms' % ((time2-time1) * 1000.0))
+        
+        self.frame_income.Show()
+    
+    def color(self, value, min, max, red=False):
+        #print("Colouring In")
+        
+        if not red:
             # Approximating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
             red_range = (0, 0.9)
             green_range = (0.25, 1.0)
@@ -291,7 +353,7 @@ class CityPrinter(object):
             green_range = (0, 0.9)
             blue_range = (0.25, 1.0)
         
-        percentage_of_range = 1 - (price - min_price)/(max_price - min_price)
+        percentage_of_range = 1 - (value - min)/(max - min)
         
         red = (((red_range[1] - red_range[0]) * percentage_of_range) + red_range[0]) * 255
         green = (((green_range[1] - green_range[0]) * percentage_of_range) + green_range[0]) * 255
@@ -371,7 +433,7 @@ if __name__=='__main__':
     print("Number of Houses: " + str(city.number_of_houses))
     print("Population: " + str(population.size))
     print("")
-    for _ in range(3):
+    for _ in range(10):
         for __ in range(12):
             population.step()
     if citysize <= 25:
@@ -381,7 +443,7 @@ if __name__=='__main__':
     print('Simulation took %0.3f ms' % ((time2-time1) * 1000.0))
     
     print("Generating Image")
-    cityprinter.create_heatmap()
+    cityprinter.create_heatmaps()
 
 
 
