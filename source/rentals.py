@@ -4,6 +4,7 @@ from wx.lib.floatcanvas.FloatCanvas import FloatCanvas
 import random
 import collections
 import time
+import sys
 
 # Named tuples are gret if we want an object as a data structure that we interact with that doesn't
 # need its own function, and won't need changing. Therefore they are only good for passing information
@@ -38,13 +39,13 @@ Our world. Holds all the houses.
 """
 class City(object):
     
-    def __init__(self, size=20, price=250, neighbourhood_size=3):
+    def __init__(self, size=20, neighbourhood_size=3):
         self.neighbourhood_size = neighbourhood_size
         self.__size = size
         self.__number_of_houses = size * size
         self.__houses = [House(0) for _ in range(self.__number_of_houses)]
         for house in self.__houses:
-            house.price = price
+            house.price = 250
     
     def get_house(self, coords):
         if self.within_city(coords):
@@ -258,35 +259,34 @@ class CityPrinter(object):
     def create_heatmap(self, occupied_only = False):
         print("Cheapest Place: " + str(self.city.min_price))
         print("Most Expensive Place: " + str(self.city.max_price))
-        time1 = time.time()
         min_price = self.city.min_price
         max_price = self.city.max_price
+
+        time1 = time.time()
         
         for house in self.city.houses:
             x = house.x - self.city.size / 2
             y = house.y - self.city.size / 2
             col = self.color(house, min_price, max_price)
             self.canvas.AddPoint((x, y), Color = col)
-            #print(str((x, y)))
-        #self.canvas.AddPoint((0, 0))
+        
         time2 = time.time()
         print('Generating Image took %0.3f ms' % ((time2-time1) * 1000.0))
+        
         self.frame.Show()
         self.app.MainLoop()
     
-    # TODO: Make the gradients better
     def color(self, house, min_price, max_price):
         #print("Colouring In")
         price = self.city.get_house(house).price
         
         if self.city.get_house(house).occupant != None:
-            # Generating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
-            # Approximating it of course
+            # Approximating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
             red_range = (0, 0.9)
             green_range = (0.25, 1.0)
             blue_range = (1.0, 1.0)
         else:
-            # Colour Shifting it to red here
+            # Colour Shifting it to red
             red_range = (1.0, 1.0)
             green_range = (0, 0.9)
             blue_range = (0.25, 1.0)
@@ -306,44 +306,81 @@ class CityPrinter(object):
         output = ""
         output += "Cheapest Place: " + str(self.city.min_price) + "\n"
         output += "Most Expensive Place: " + str(self.city.max_price) + "\n"
+        output += "\n"
         for y in range(self.city.size):
             row = ""
             for x in range(self.city.size):
-                coords = Coordinates(x=x, y=y)
+                coords = Coordinates(x, y)
                 occupied_string = "_" if self.city.get_house(coords).occupant == None else "X"
                 row += str("%3d%s " % (self.city.get_house(coords).price, occupied_string))
             output += row + "\n"
         return output
-    
+
+def print_argument_options():
+    print("Command Line Arguments:")
+    print("\trentals.py [city size] [population] [neighbourhood]")
+    print("")
+    print("\tcity size:     How many rows/columns the city should have.")
+    print("\t               The city is always square. Defaults to 20")
+    print("")
+    print("\tpopulation:    How many people live in the city. Defaults to 75% city size.")
+    print("\t               Leave as 0 if you want it to default.")
+    print("")
+    print("\tneighbourhood: How far a person looks for neighbours. Default is 3.")
+    print("")
+    print("")
+
+def print_info():
+    print("")
+    print("Rental Price Simulation")
+    print("Program By Mitchell Pomery")
+    print("")
+    print("Agent Based Simulation of changing rental prices given People moving around" + \
+            "the city trying to be happy and living within their means.")
+    print("")
+    print("")
 
 if __name__=='__main__':
+    print_info()
+    print_argument_options()
+    
     # TODO: Get these from command line arguments
-    citysize = 20
-    price = 250
-    citypopulation = int(citysize*citysize*0.125)
-    neighbourhood_size = 3
+    if len(sys.argv) > 1:
+        citysize = int(sys.argv[1])
+    else:
+        citysize = 20
+    if len(sys.argv) > 2:
+        citypopulation = int(sys.argv[2])
+        if citypopulation >= (citysize*citysize - 1) or citypopulation <= 0:
+            print("Population Invalid. Defaulting to 75% of city size.")
+            citypopulation = int(citysize * citysize * 0.75)
+    else:
+        citypopulation = int(citysize * citysize * 0.75)
+    if len(sys.argv) > 3:
+        neighbourhood_size = int(sys.argv[3])
+    else:
+        neighbourhood_size = 3
     
     time1 = time.time()
-    city = City(citysize, price, neighbourhood_size)
+    
+    city = City(citysize, neighbourhood_size)
     population = Population(city, citypopulation)
     cityprinter = CityPrinter(city, population)
     
-    
     print("Starting Simulation")
-    print("")
     print("Number of Houses: " + str(city.number_of_houses))
     print("Population: " + str(population.size))
     print("")
-    #print("Initial City")
-    #print(cityprinter)
     for _ in range(3):
-        #print("End Of Year " + str(_ + 1))
         for __ in range(12):
             population.step()
+    if citysize <= 25:
         print(cityprinter)
-    print("Generating Image")
+    
     time2 = time.time()
     print('Simulation took %0.3f ms' % ((time2-time1) * 1000.0))
+    
+    print("Generating Image")
     cityprinter.create_heatmap()
 
 
