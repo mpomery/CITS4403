@@ -247,7 +247,9 @@ class Person(object):
             self.__income = income
     
     def can_move(self, step):
-        return (step - self.last_moved) in [6, 12, 18] or (step - self.last_moved) >= 24
+        # Lived somewhere for 6 or 18 months, or there between 2 and 4 years or there for n years
+        return (step - self.last_moved) in [6, 18] or 24 >= (step - self.last_moved) >=48 \
+                or (step - self.last_moved) % 12 == 0
     
     def time_at_house(self, step):
         return (step - self.last_moved)
@@ -262,8 +264,13 @@ class Person(object):
     
     @property
     def is_happy(self):
-        # Happy if rent is less than 80% of income
-        return self.city.get_house(self.current_location).price <= (0.8  * self.income)
+        return calculate_happiness(self, house) >= 0.75
+    
+    """
+    A number between 0 and 1, where 0 is on the verge of tears and 1 is extatic about everything
+    """
+    def calculate_happiness(self, house)
+        return self.city.get_house(house).price <= (0.8  * self.income)
     
     @property
     def income(self):
@@ -316,7 +323,6 @@ class CityPrinter(object):
         
         self.frame_rent.Show()
     
-    # TODO: Finish this
     def create_income_map(self):
         print("Lowest Income: " + str(self.population.min_income))
         print("Highest Income: " + str(self.population.max_income))
