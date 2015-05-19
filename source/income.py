@@ -279,7 +279,7 @@ if __name__=='__main__':
     print("Number of Houses: " + str(city.number_of_houses))
     print("Population: " + str(population.size))
     print("")
-    print(cityprinter)
+    #print(cityprinter)
     for _ in range(1000):
         population.step()
     
