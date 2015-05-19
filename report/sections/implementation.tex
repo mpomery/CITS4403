@@ -3,7 +3,10 @@
 \par
 To simulate a city with people moving around it we need to create two agents, the houses themselves and the people who live in them. We then create a city for these houses to be built in and a population that live in this city. These two groups then interact with each other and act depending on the state of the other. At the end of the simulation there are two things we can look at, rental prices and income distribution.
 
-Since the system we are creating is complex, making the code easy to read and understand is important. One way to do this is through the use of pythons named tuples. They allow the creation of unchangeable tuples with properties that can be accessed by name instead of index. They easy to use and make code significantly more readable.
+\subsection{Named Tuples}
+
+Since the system we are creating is complex, making the code easy to read and understand is important. One way to do this is through the use of pythons named tuples. They allow the creation of unchangeable tuples with properties that can be accessed by name instead of index. They easy to use and make code significantly more readable. The main named tuple used in the simulation is Coordinates, which are passed between several objects. It increases code readability by making it possible to refer to the x and y coordinates as \texttt{x} and \texttt{y}.
+\\
 
 \begin{lstlisting}[language=Python]
 import collections
@@ -21,31 +24,21 @@ print(location.x)
 print(location.y)
 \end{lstlisting}
 
-\subsection{Agents}
+\subsection{House and City}
 
-\subsubsection{House}
 \par
-- Have a price and possibly an occupant \\
-- Increase rent after certain amount of time \\
-- Decrease rent to try and get people to rent it \\
+The \texttt{City} object manages all of the \texttt{House} objects. \texttt{House} objects are a simple data structure that holds a price and an occupant, while \texttt{City} implements all of the logic.
 
-\subsubsection{People}
 \par
-- Similar to real people \\
-  - Have an income \\
-  - Have a bank balance \\
-  - Pay rent every month \\
-  - Can only move when rent agreement finishes \\
-- Unlike real world \\
-  - No share houses \\
-  - No income increases \\
-  - Don't have sentience \\
+Every house belongs in \texttt{City} and is created by it with a default price. The methods do not pass \texttt{House} objects back to the caller but instead return coordinates. These coordinates can then be access by calling the \texttt{get\_house} method.
 
-\subsection{Managing the Agents}
-\subsubsection{City}
 \par
-- Manages all the houses \\
-- Makes sure rent changes \\
+At the start of every step the prices of each unoccupied rental property are updated to try and make the houses look as affordable as possible to anyone who might move. At the end of each step the price of each occupied rental that meets certain conditions is increased by a fixed amount.
+
+\subsection{People and Population}
+
+\par
+\texttt{People} in the simulation share similar properties to people in real life. They have an income, they pay rent every month and they can only leave a rental agreement at the end of it's term. However they are also dissimilar to real people, as they can't share houses, don't ever get pay increases and don't have sentience. Fortunately with agent based modeling you do not need to replicate what you are investigating perfectly, and can choose what you need.
 
 \subsubsection{Population}
 \par
