@@ -95,6 +95,11 @@
 
 \lstset{style=pythonstyle}
 
+\lstnewenvironment{code}[1][]%
+  {\noindent\minipage{\linewidth}\medskip 
+   \lstset{basicstyle=\ttfamily\footnotesize,frame=single,#1}}
+  {\endminipage}
+
 \setlist{nosep}
 
 %\usepackage{parskip}
@@ -102,8 +107,8 @@
 \setlength{\parindent}{0pt} % Remove Paragraph indenting
 \setlength{\parskip}{10pt}
 
-\titlespacing*{\section}{0pt}{0pt}{0pt}
-\titlespacing*{\subsection}{0pt}{0pt}{0pt}
+%\titlespacing*{\section}{0pt}{0pt}{0pt}
+%\titlespacing*{\subsection}{0pt}{0pt}{0pt}
 
 \renewcommand\thesection{\arabic{section}} % Remove Chapter Numbers
 
@@ -153,6 +158,8 @@
 \input{sections/introduction}
 \input{sections/implementation}
 \input{sections/excercises}
+\input{sections/observations}
+\input{sections/references}
 
 \clearpage
 

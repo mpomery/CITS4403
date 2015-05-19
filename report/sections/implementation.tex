@@ -1,28 +1,23 @@
 \section{Implementation}
 
 \par
-To simulate a city with people moving around it we need to create two agents, the houses themselves and the people who live in them. We then create a city for these houses to be built in and a population that live in this city. These two groups then interact with each other and act depending on the state of the other. At the end of the simulation there are two things we can look at, rental prices and income distribution.
+To simulate a city with people moving around it we needed to create two agents, the houses themselves and the people who live in them. We then create a city for these houses to be built in and a population that live in this city. These two groups then interact with each other and act depending on the state of the other. At the end of the simulation there are two things we can look at, rental prices and income distribution. The simulation has been implemented in \texttt{rentals.py}.
 
 \subsection{Named Tuples}
 
 Since the system we are creating is complex, making the code easy to read and understand is important. One way to do this is through the use of pythons named tuples. They allow the creation of unchangeable tuples with properties that can be accessed by name instead of index. They easy to use and make code significantly more readable. The main named tuple used in the simulation is Coordinates, which are passed between several objects. It increases code readability by making it possible to refer to the x and y coordinates as \texttt{x} and \texttt{y}.
 \\
 
-\begin{lstlisting}[language=Python]
+\begin{code}[language=Python]
 import collections
 
 # Define a named tuple
 Coordinates = collections.namedtuple('Coordinates', 'x y')
-
 # Create a tuple
 location = Coordinates(4, 5)
-
-# Will print 4
-print(location.x)
-
-# Will print 5
-print(location.y)
-\end{lstlisting}
+print(location.x) # Will print 4
+print(location.y) # Will print 5
+\end{code}
 
 \subsection{House and City}
 
@@ -40,9 +35,48 @@ At the start of every step the prices of each unoccupied rental property are upd
 \par
 \texttt{People} in the simulation share similar properties to people in real life. They have an income, they pay rent every month and they can only leave a rental agreement at the end of it's term. However they are also dissimilar to real people, as they can't share houses, don't ever get pay increases and don't have sentience. Fortunately with agent based modeling you do not need to replicate what you are investigating perfectly, and can choose what you need.
 
-\subsubsection{Population}
+Managing all of the \texttt{People} is the responsibility of the \texttt{Population} class. Each step it checks to see who out of the people who can move is unhappy about their current situation, and moves as many people as it can to unoccupied houses.
+
+\subsection{CityPrinter}
+
+\texttt{CityPrinter} creates colour heat maps of both rental prices and incomes using the \texttt{wx} Python Package. The methods for both of these heat maps are very similar. for the rental price heat map, price for each house is retrieved, a colour is generated for it and then it is added to a canvas. After every house has 
+
+\begin{code}[language=Python]
+def create_rent_map(self):
+    min_price = self.city.min_price
+    max_price = self.city.max_price
+    for house in self.city.houses:
+        x = house.x - self.city.size / 2
+        y = house.y - self.city.size / 2
+        col = self.color(self.city.get_house(house).price, min_price, max_price, \
+                self.city.get_house(house).occupant == None)
+        self.canvas_rent.AddPoint((x, y), Color = col)
+    self.frame_rent.Show()
+\end{code}
+
 \par
-- Manages all the people \\
-- Makes sure they are happy \\
-- Make sure they move if they aren't \\
-- Each step updates rent of old houses, moves people, then updates rent of occupied houses \\
+Determining the colour for a specific income is done using the \texttt{color} method. This method approximates the sequential colour scheme from the Department of Geography at the University of Oregon\cite{dog-uoo}. It does this by transferring the value from the scale provided to the red, green and blue scales in the method. It returns an object that can be used right away in the heat map creation methods.
+
+\begin{code}[language=Python]
+def color(self, value, min, max, red=False):
+	if not red:
+	    red_range = (0, 0.9)
+	    green_range = (0.25, 1.0)
+	    blue_range = (1.0, 1.0)
+	else:
+	    red_range = (1.0, 1.0)
+	    green_range = (0, 0.9)
+	    blue_range = (0.25, 1.0)
+	
+	percentage_of_range = 1 - (value - min)/(max - min)
+	
+	red = (((red_range[1] - red_range[0]) * percentage_of_range) + red_range[0]) * 255
+	green = (((green_range[1] - green_range[0]) * percentage_of_range) + green_range[0]) * 255
+	blue = (((blue_range[1] - blue_range[0]) * percentage_of_range) + blue_range[0]) * 255
+	
+	return wx.Colour(red, green, blue, 1)
+\end{code}
+
+
+
+
