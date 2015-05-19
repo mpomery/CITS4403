@@ -14,9 +14,9 @@ Coordinates = collections.namedtuple('Coordinates', 'x y')
 # House can't be a named tuple as we change values in house and can not change values in tuples.
 
 class House(object):
-    def __init__(self, price, occupant = None):
+    def __init__(self, price):
         self.__price = price
-        self.__occupant = occupant
+        self.__occupant = None
     
     @property
     def price(self):
@@ -264,12 +264,12 @@ class Person(object):
     
     @property
     def is_happy(self):
-        return calculate_happiness(self, house) >= 0.75
+        return self.calculate_happiness(self.current_location) >= 0.75
     
     """
     A number between 0 and 1, where 0 is on the verge of tears and 1 is extatic about everything
     """
-    def calculate_happiness(self, house)
+    def calculate_happiness(self, house):
         return self.city.get_house(house).price <= (0.8  * self.income)
     
     @property
@@ -412,7 +412,7 @@ if __name__=='__main__':
     print_info()
     print_argument_options()
     
-    # TODO: Get these from command line arguments
+    # Get experiment variables from command line arguments
     if len(sys.argv) > 1:
         citysize = int(sys.argv[1])
     else:
@@ -439,8 +439,8 @@ if __name__=='__main__':
     print("Number of Houses: " + str(city.number_of_houses))
     print("Population: " + str(population.size))
     print("")
-    for _ in range(10):
-        for __ in range(12):
+    for _ in range(10): # Years
+        for __ in range(12): # Months
             population.step()
     if citysize <= 25:
         print(cityprinter)
