@@ -1,20 +1,24 @@
 \section{Implementation}
 
 \par
-- Agent based model \\
-- Two agents that interact \\
-- Houses and People \\
-- Both act depending on the other \\
+To simulate a city with people moving around it we need to create two agents, the houses themselves and the people who live in them. We then create a city for these houses to be built in and a population that live in this city. These two groups then interact with each other and act depending on the state of the other. At the end of the simulation there are two things we can look at, rental prices and income distribution.
 
-\par
-- Named Tuples \\
-- Good for simple data structures that we want to pass around
-- Like Coordinates
+Since the system we are creating is complex, making the code easy to read and understand is important. One way to do this is through the use of pythons named tuples. They allow the creation of unchangeable tuples with properties that can be accessed by name instead of index. They easy to use and make code significantly more readable.
 
 \begin{lstlisting}[language=Python]
 import collections
 
+# Define a named tuple
 Coordinates = collections.namedtuple('Coordinates', 'x y')
+
+# Create a tuple
+location = Coordinates(4, 5)
+
+# Will print 4
+print(location.x)
+
+# Will print 5
+print(location.y)
 \end{lstlisting}
 
 \subsection{Agents}
