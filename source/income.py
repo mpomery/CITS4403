@@ -151,7 +151,10 @@ class Person(object):
         # Income not in the approximately equal to suppounding incomes
         neighbours = self.city.get_neighbourhood(self.current_location)
         cumulative_income = sum([p.income for p in neighbours])
-        average = cumulative_income / len(neighbours)
+        if len(neighbours) > 0:
+            average = cumulative_income / len(neighbours)
+        else:
+            average = 0
         return abs(average - self.income) > self.income * 0.25
     
     def move(self, step, coords):
@@ -280,7 +283,7 @@ if __name__=='__main__':
     print("Population: " + str(population.size))
     print("")
     #print(cityprinter)
-    for _ in range(1000):
+    for _ in range(100):
         population.step()
     
     time2 = time.time()
