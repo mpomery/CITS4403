@@ -114,6 +114,7 @@ class Population(object):
     
     def move_people(self, people, empty_houses):
         if len(people) > 0:
+            random.shuffle(people)
             moves = []
             for person in people:
                 if len(empty_houses) > 0:
@@ -259,14 +260,14 @@ if __name__=='__main__':
     if len(sys.argv) > 1:
         citysize = int(sys.argv[1])
     else:
-        citysize = 10
+        citysize = 100
     if len(sys.argv) > 2:
         citypopulation = int(sys.argv[2])
         if citypopulation >= (citysize*citysize - 1) or citypopulation <= 0:
-            print("Population Invalid. Defaulting to 75% of city size.")
-            citypopulation = int(citysize * citysize * 0.75)
+            print("Population Invalid. Defaulting to 90% of city size.")
+            citypopulation = int(citysize * citysize * 0.9)
     else:
-        citypopulation = int(citysize * citysize * 0.75)
+        citypopulation = int(citysize * citysize * 0.9)
     if len(sys.argv) > 3:
         neighbourhood_size = int(sys.argv[3])
     else:
