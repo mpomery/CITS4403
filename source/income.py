@@ -69,16 +69,6 @@ class City(object):
         return houses
     
     @property
-    def occupied_houses(self):
-        occupied = []
-        for x in range(self.__size):
-            for y in range(self.__size):
-                coords = Coordinates(x, y)
-                if self.get_house(coords) != None:
-                    occupied.append(coords)
-        return occupied
-    
-    @property
     def number_of_houses(self):
         return self.__number_of_houses
     
@@ -110,7 +100,6 @@ class Population(object):
         self.__current_step += 1
         
         empty_houses = self.city.empty_houses
-        occupied_houses = self.city.occupied_houses
         people_to_move = self.people_to_move
         
         self.move_people(people_to_move, empty_houses)
@@ -153,14 +142,10 @@ class Population(object):
 A person living in our city
 """
 class Person(object):
-    def __init__(self, city, income = None):
-        self.last_moved = 0
+    def __init__(self, city):
         self.current_location = Coordinates(-1, -1)
         self.city = city
-        if income == None:
-            self.__income = random.randint(250, 750)
-        else:
-            self.__income = income
+        self.__income = random.randint(250, 750)
     
     def wants_to_move(self, step):
         # Income not in the approximately equal to suppounding incomes
@@ -173,13 +158,11 @@ class Person(object):
         self.city.set_house(coords, self)
         if self.current_location != Coordinates(-1, -1):
             self.city.set_house(self.current_location, None)
-        self.last_moved = step
         self.current_location = coords
     
     @property
     def income(self):
         return self.__income
-    
     
 """
 Outputs our city
@@ -193,21 +176,14 @@ class CityPrinter(object):
         self.app = wx.App(False)
         self.w = self.city.size + 100
         self.h = self.city.size + 120
-        self.frame_income = wx.Frame(None, -1, 'Income Map', size=(self.w, self.h))
-        self.canvas_income = FloatCanvas(self.frame_income, -1)
+        self.frame = wx.Frame(None, -1, 'Income Map', size=(self.w, self.h))
+        self.canvas = FloatCanvas(self.frame, -1)
     
-    def create_heatmaps(self):
-        self.create_income_map()
-        self.app.MainLoop()
-    
-    def create_income_map(self):
-        print("Lowest Income: " + str(self.population.min_income))
-        print("Highest Income: " + str(self.population.max_income))
+    def create_heatmap(self):
         min_income = self.population.min_income
         max_income = self.population.max_income
-
-        time1 = time.time()
-        print("Generating Income Map")
+        print("Lowest Income: " + str(min_income))
+        print("Highest Income: " + str(max_income))
         
         for house in self.city.houses:
             x = house.x - self.city.size / 2
@@ -215,28 +191,18 @@ class CityPrinter(object):
             person = self.city.get_house(house)
             if person != None:
                 col = self.color(person.income, min_income, max_income)
-                self.canvas_income.AddPoint((x, y), Color = col)
+                self.canvas.AddPoint((x, y), Color = col)
         
-        time2 = time.time()
-        print('Generating Image took %0.3f ms' % ((time2-time1) * 1000.0))
-        
-        self.frame_income.Show()
+        self.frame.Show()
+        self.app.MainLoop()
     
-    def color(self, value, min, max, red=False):
-        #print("Colouring In")
+    def color(self, value, min_val, max_val):
+        # Approximating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
+        red_range = (0, 0.9)
+        green_range = (0.25, 1.0)
+        blue_range = (1.0, 1.0)
         
-        if not red:
-            # Approximating http://geog.uoregon.edu/datagraphics/color/Bu_10.txt on the fly
-            red_range = (0, 0.9)
-            green_range = (0.25, 1.0)
-            blue_range = (1.0, 1.0)
-        else:
-            # Colour Shifting it to red
-            red_range = (1.0, 1.0)
-            green_range = (0, 0.9)
-            blue_range = (0.25, 1.0)
-        
-        percentage_of_range = 1 - (value - min)/(max - min)
+        percentage_of_range = 1 - (value - min_val)/(max_val - min_val)
         
         red = (((red_range[1] - red_range[0]) * percentage_of_range) + red_range[0]) * 255
         green = (((green_range[1] - green_range[0]) * percentage_of_range) + green_range[0]) * 255
@@ -249,7 +215,6 @@ class CityPrinter(object):
     """
     def __str__(self):
         output = ""
-        output += "\n"
         for y in range(self.city.size):
             row = ""
             for x in range(self.city.size):
@@ -258,7 +223,7 @@ class CityPrinter(object):
                 if occupied:
                     row += str("%3d " % (self.city.get_house(coords).income))
                 else:
-                    row += str("___ ")
+                    row += str("    ")
             output += row + "\n"
         return output
 
@@ -278,11 +243,8 @@ def print_argument_options():
 
 def print_info():
     print("")
-    print("Rental Price Simulation")
+    print("Income Simulation")
     print("Program By Mitchell Pomery")
-    print("")
-    print("Agent Based Simulation of changing rental prices given People moving around" + \
-            "the city trying to be happy and living within their means.")
     print("")
     print("")
 
@@ -294,7 +256,7 @@ if __name__=='__main__':
     if len(sys.argv) > 1:
         citysize = int(sys.argv[1])
     else:
-        citysize = 100
+        citysize = 10
     if len(sys.argv) > 2:
         citypopulation = int(sys.argv[2])
         if citypopulation >= (citysize*citysize - 1) or citypopulation <= 0:
@@ -318,26 +280,12 @@ if __name__=='__main__':
     print("Population: " + str(population.size))
     print("")
     print(cityprinter)
-    for _ in range(100): # Years
-            population.step()
-            #print(_)
-        #if citysize <= 25:
-        #    print(cityprinter)
+    for _ in range(1000):
+        population.step()
     
     time2 = time.time()
     print('Simulation took %0.3f ms' % ((time2-time1) * 1000.0))
     
     print("Generating Image")
-    cityprinter.create_heatmaps()
-
-
-
-
-
-
-
-
-
-
-
+    cityprinter.create_heatmap()
 
