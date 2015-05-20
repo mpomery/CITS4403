@@ -94,7 +94,7 @@ class Population(object):
                 homes.insert(random.randint(0, len(homes)), coords)
         for person in self.people:
             home = homes.pop(0)
-            person.move(self.__current_step, home)
+            person.move(home)
     
     def step(self):
         self.__current_step += 1
@@ -108,7 +108,7 @@ class Population(object):
     def people_to_move(self):
         move = []
         for person in self.people:
-            if person.wants_to_move(self.__current_step):
+            if person.wants_to_move():
                 move.append(person)
         return move
     
@@ -124,17 +124,17 @@ class Population(object):
             
             for m in moves:
                 #print(m[0])
-                m[0].move(self.__current_step, m[1])
+                m[0].move(m[1])
             
     
     @property
     def size(self):
         return self.__size
-        
+    
     @property
     def min_income(self):
         return min(self.people, key=lambda p: p.income).income
-        
+    
     @property
     def max_income(self):
         return max(self.people, key=lambda p: p.income).income
@@ -148,7 +148,7 @@ class Person(object):
         self.city = city
         self.__income = random.randint(250, 750)
     
-    def wants_to_move(self, step):
+    def wants_to_move(self):
         # Income not in the approximately equal to suppounding incomes
         neighbours = self.city.get_neighbourhood(self.current_location)
         cumulative_income = sum([p.income for p in neighbours])
@@ -158,7 +158,7 @@ class Person(object):
             average = 0
         return abs(average - self.income) > self.income * 0.25
     
-    def move(self, step, coords):
+    def move(self, coords):
         self.city.set_house(coords, self)
         if self.current_location != Coordinates(-1, -1):
             self.city.set_house(self.current_location, None)
@@ -284,7 +284,7 @@ if __name__=='__main__':
     print("Population: " + str(population.size))
     print("")
     #print(cityprinter)
-    for _ in range(100):
+    for _ in range(10):
         population.step()
     
     time2 = time.time()
