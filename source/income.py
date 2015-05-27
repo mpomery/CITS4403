@@ -236,9 +236,9 @@ def print_argument_options():
     print("\trentals.py [city size] [population] [neighbourhood]")
     print("")
     print("\tcity size:     How many rows/columns the city should have.")
-    print("\t               The city is always square. Defaults to 20")
+    print("\t               The city is always square. Defaults to 100")
     print("")
-    print("\tpopulation:    How many people live in the city. Defaults to 75% city size.")
+    print("\tpopulation:    How many people live in the city. Defaults to 90% city size.")
     print("\t               Leave as 0 if you want it to default.")
     print("")
     print("\tneighbourhood: How far a person looks for neighbours. Default is 3.")
@@ -284,7 +284,7 @@ if __name__=='__main__':
     print("Population: " + str(population.size))
     print("")
     #print(cityprinter)
-    for _ in range(10):
+    for _ in range(100):
         population.step()
     
     time2 = time.time()
